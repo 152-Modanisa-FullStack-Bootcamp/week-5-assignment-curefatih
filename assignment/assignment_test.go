@@ -1,6 +1,7 @@
 package assignment
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -19,10 +20,29 @@ func TestAddUint32(t *testing.T) {
 			4294967290, 6 => 0, true
 			4294967290, 10 => 4, true
 	*/
-	sum, overflow := AddUint32(math.MaxUint32, 1)
+	cases := []struct {
+		x, y     uint32
+		sum      uint32
+		overflow bool
+	}{
+		{math.MaxUint32, 1, 0, true},
+		{1, 1, 2, false},
+		{42, 2701, 2743, false},
+		{42, math.MaxUint32, 41, true},
+		{4294967290, 5, 4294967295, false},
+		{4294967290, 6, 0, true},
+		{4294967290, 10, 4, true},
+	}
 
-	assert.Equal(t, uint32(0), sum)
-	assert.True(t, overflow)
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("add: %v + %v", c.x, c.y), func(t *testing.T) {
+			sum, overflow := AddUint32(c.x, c.y)
+
+			assert.Equal(t, c.sum, sum)
+			assert.Equal(t, c.overflow, overflow)
+		})
+
+	}
 }
 
 func TestCeilNumber(t *testing.T) {
@@ -41,9 +61,31 @@ func TestCeilNumber(t *testing.T) {
 			42.99 => 43
 			43.13 => 43.25
 	*/
-	point := CeilNumber(42.42)
 
-	assert.Equal(t, 42.50, point)
+	cases := []struct {
+		input    float64
+		expected float64
+	}{
+		{42.42, 42.50},
+		{42.00, 42.00},
+		{42.01, 42.25},
+		{42.24, 42.25},
+		{42.25, 42.25},
+		{42.26, 42.50},
+		{42.55, 42.75},
+		{42.75, 42.75},
+		{42.76, 43.00},
+		{42.99, 43.00},
+		{43.13, 43.25},
+	}
+
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("should ceil: %v", c.input), func(t *testing.T) {
+			result := CeilNumber(c.input)
+
+			assert.Equal(t, c.expected, result)
+		})
+	}
 }
 
 func TestAlphabetSoup(t *testing.T) {
@@ -58,9 +100,29 @@ func TestAlphabetSoup(t *testing.T) {
 			"bac" => "abc"
 			"cba" => "abc"
 	*/
-	result := AlphabetSoup("hello")
 
-	assert.Equal(t, "ehllo", result)
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"hello", "ehllo"},
+		{"", ""},
+		{"h", "h"},
+		{"ab", "ab"},
+		{"ba", "ab"},
+		{"bac", "abc"},
+		{"cba", "abc"},
+	}
+
+	for _, c := range cases {
+
+		t.Run(fmt.Sprintf("should return alphabetical order: %v", c.input), func(t *testing.T) {
+			result := AlphabetSoup(c.input)
+
+			assert.Equal(t, c.expected, result)
+		})
+	}
+
 }
 
 func TestStringMask(t *testing.T) {
@@ -77,9 +139,30 @@ func TestStringMask(t *testing.T) {
 			"string", 7(bigger than len of "string") => "******"
 			"s*r*n*", 3 => "s*r***"
 	*/
-	result := StringMask("!mysecret*", 2)
 
-	assert.Equal(t, "!m********", result)
+	cases := []struct {
+		input    string
+		n        uint
+		expected string
+	}{
+		{"!mysecret*", 2, "!m********"},
+		{"", 1, "*"},
+		{"a", 1, "*"},
+		{"string", 0, "******"},
+		{"string", 3, "str***"},
+		{"string", 5, "strin*"},
+		{"string", 6, "******"},
+		{"string", 7, "******"},
+		{"s*r*n*", 3, "s*r***"},
+	}
+
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("should return masked string: %v", c.input), func(t *testing.T) {
+			result := StringMask(c.input, c.n)
+
+			assert.Equal(t, c.expected, result)
+		})
+	}
 }
 
 func TestWordSplit(t *testing.T) {
@@ -96,9 +179,26 @@ func TestWordSplit(t *testing.T) {
 			[2]string{"notcat",words} => not possible
 			[2]string{"bootcamprocks!",words} => not possible
 	*/
-	result := WordSplit([2]string{"hellocat", words})
 
-	assert.Equal(t, "hello,cat", result)
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"hellocat", "hello,cat"},
+		{"catbat", "cat,bat"},
+		{"yellowapple", "yellow,apple"},
+		{"", "not possible"},
+		{"notcat", "not possible"},
+		{"bootcamprocks!", "not possible"},
+	}
+
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("should return split words: %v", c.input), func(t *testing.T) {
+			result := WordSplit([2]string{c.input, words})
+
+			assert.Equal(t, c.expected, result)
+		})
+	}
 }
 
 func TestVariadicSet(t *testing.T) {
@@ -112,7 +212,21 @@ func TestVariadicSet(t *testing.T) {
 			"bootcamp","rocks!","really","rocks! => []interface{"bootcamp","rocks!","really"}
 			1,uint32(1),"first",2,uint32(2),"second",1,uint32(2),"first" => []interface{1,uint32(1),"first",2,uint32(2),"second"}
 	*/
-	set := VariadicSet(4, 2, 5, 4, 2, 4)
 
-	assert.Equal(t, []interface{}{4, 2, 5}, set)
+	cases := []struct {
+		input    []interface{}
+		expected []interface{}
+	}{
+		{[]interface{}{4, 2, 5, 4, 2, 4}, []interface{}{4, 2, 5}},
+		{[]interface{}{"bootcamp", "rocks!", "really", "rocks!"}, []interface{}{"bootcamp", "rocks!", "really"}},
+		{[]interface{}{1, uint32(1), "first", 2, uint32(2), "second", 1, uint32(2), "first"}, []interface{}{1, uint32(1), "first", 2, uint32(2), "second"}},
+	}
+
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("should return set: %v", c.input), func(t *testing.T) {
+			result := VariadicSet(c.input...)
+
+			assert.Equal(t, c.expected, result)
+		})
+	}
 }
